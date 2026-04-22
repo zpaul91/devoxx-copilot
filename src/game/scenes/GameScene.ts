@@ -55,9 +55,12 @@ export class GameScene extends Scene {
     }
 
     create() {
+        // Defensive cleanup: ensure no leftover demo state from a previous run
+        this.stopDemo();
+        this.isAnimating = false;
+
         this.board = new Board(GRID_SIZE, this.demoMode);
         this.board.reset();
-        this.isAnimating = false;
 
         const canvasW = this.scale.width;
 
@@ -76,6 +79,9 @@ export class GameScene extends Scene {
         } else {
             this.setupInput();
         }
+
+        // Reliable cleanup when Phaser shuts down this scene
+        this.events.once('shutdown', this.cleanupScene, this);
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -187,6 +193,8 @@ export class GameScene extends Scene {
             this.demoTimer.destroy();
             this.demoTimer = undefined;
         }
+        // Also kill any pending delayedCall timers from handleMove/demoStep
+        this.time.removeAllEvents();
     }
 
     // --- Grid ---
@@ -389,7 +397,15 @@ export class GameScene extends Scene {
         this.scene.restart({ demoMode: this.demoMode });
     }
 
-    shutdown() {
+    private cleanupScene() {
         this.stopDemo();
+        this.demoMode = false;
+        this.demoWon = false;
+        this.isAnimating = false;
+        // Remove input listeners to prevent ghost inputs in next scene
+        if (this.input.keyboard) {
+            this.input.keyboard.removeAllListeners();
+        }
+        this.input.removeAllListeners();
     }
 }

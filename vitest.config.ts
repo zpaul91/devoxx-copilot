@@ -10,6 +10,12 @@ export default defineConfig({
             include: ['src/game/logic/**/*.ts'],
             exclude: ['src/game/logic/__tests__/**'],
             reporter: ['text', 'text-summary', 'lcov'],
+            thresholds: {
+                lines: 75,
+                branches: 75,
+                functions: 75,
+                statements: 75,
+            },
         },
     },
 });
