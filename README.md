@@ -46,12 +46,15 @@ src/
 - Spawn : 90% chance d'un **2**, 10% d'un **4**
 - Détection automatique de game over
 - Meilleur score persisté en `localStorage`
+- **Chronomètre** : temps de jeu tracké et affiché (format `mm:ss`)
 
 ### Rendu (`GameScene.ts`)
 
 - Grille et tuiles dessinées avec les primitives Phaser (Graphics, Rectangle, Text)
 - Animations de spawn (scale 0→1) et de fusion (scale 0.5→1)
 - Thème **bleu** : fond bleu nuit, tuiles dégradé bleu → cyan → turquoise
+- **Chronomètre** affiché dans le header, enregistré dans le classement
+- L'IA (mode démo) a aussi son propre chronomètre
 
 ## 🎨 Palette
 
