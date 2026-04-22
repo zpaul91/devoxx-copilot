@@ -13,6 +13,15 @@ export class MainMenu extends Scene {
         const cx = this.scale.width / 2;
         const playerName = getCurrentPlayer() || 'Joueur';
 
+        // Title glow (shadow text behind)
+        this.add.text(cx, 32, '2048', {
+            fontFamily: 'Arial Black',
+            fontSize: '72px',
+            color: '#2a6090',
+            stroke: '#1a3a5c',
+            strokeThickness: 10,
+        }).setOrigin(0.5, 0).setAlpha(0.5);
+
         // Title
         this.add.text(cx, 30, '2048', {
             fontFamily: 'Arial Black',
@@ -47,6 +56,16 @@ export class MainMenu extends Scene {
         const top5 = getTop(5);
         const lbY = 180;
 
+        // Leaderboard panel background
+        const panelW = 400;
+        const panelPadTop = 8;
+        const panelPadBottom = 12;
+        const panelContentH = top5.length > 0 ? 30 + top5.length * 30 : 55;
+        const panelH = panelPadTop + panelContentH + panelPadBottom;
+        const panelGfx = this.add.graphics();
+        panelGfx.fillStyle(0x1a3a5c, 0.6);
+        panelGfx.fillRoundedRect(cx - panelW / 2, lbY - panelPadTop, panelW, panelH, 12);
+
         this.add.text(cx, lbY, '🏆 Classement', {
             fontFamily: 'Arial Black',
             fontSize: '20px',
@@ -63,12 +82,20 @@ export class MainMenu extends Scene {
             const colRank = cx - 160;
             const colName = cx - 120;
             const colScore = cx + 140;
+            const separatorGfx = this.add.graphics();
+            const separatorW = 360;
 
             top5.forEach((entry, i) => {
                 const y = lbY + 35 + i * 30;
                 const isMe = entry.name === playerName;
                 const color = isMe ? '#00b4d8' : '#7eb8e0';
                 const font = isMe ? 'Arial Black' : 'Arial';
+
+                // Row separator (between rows, not before the first)
+                if (i > 0) {
+                    separatorGfx.fillStyle(0x2a4a6c, 1);
+                    separatorGfx.fillRect(cx - separatorW / 2, y - 15, separatorW, 1);
+                }
 
                 // Rank
                 this.add.text(colRank, y, `${i + 1}.`, {
@@ -96,32 +123,50 @@ export class MainMenu extends Scene {
             color: '#4a7aa8',
         }).setOrigin(0.5, 0);
 
-        // Play button
+        // Play button (rounded via Graphics + Zone for hit area)
         const btnY = subY + 40;
-        const btn = this.add.rectangle(cx - 55, btnY, 140, 50, 0x2563eb, 1)
-            .setInteractive({ useHandCursor: true });
-        this.add.text(cx - 55, btnY, 'Jouer', {
+        const playBtnW = 140;
+        const playBtnH = 50;
+        const playBtnX = cx - 55;
+        const playGfx = this.add.graphics();
+        const drawPlayBtn = (color: number) => {
+            playGfx.clear();
+            playGfx.fillStyle(color, 1);
+            playGfx.fillRoundedRect(playBtnX - playBtnW / 2, btnY - playBtnH / 2, playBtnW, playBtnH, 12);
+        };
+        drawPlayBtn(0x2563eb);
+        this.add.text(playBtnX, btnY, 'Jouer', {
             fontFamily: 'Arial Black',
             fontSize: '22px',
             color: '#ffffff',
         }).setOrigin(0.5);
-
-        btn.on('pointerover', () => btn.setFillStyle(0x3b82f6));
-        btn.on('pointerout', () => btn.setFillStyle(0x2563eb));
-        btn.on('pointerdown', () => this.scene.start('GameScene', { demoMode: false }));
-
-        // Demo button
-        const demoBtn = this.add.rectangle(cx + 95, btnY, 120, 50, 0x1a3a5c, 1)
+        const playZone = this.add.zone(playBtnX, btnY, playBtnW, playBtnH)
             .setInteractive({ useHandCursor: true });
-        this.add.text(cx + 95, btnY, '🤖 Démo', {
+        playZone.on('pointerover', () => drawPlayBtn(0x3b82f6));
+        playZone.on('pointerout', () => drawPlayBtn(0x2563eb));
+        playZone.on('pointerdown', () => this.scene.start('GameScene', { demoMode: false }));
+
+        // Demo button (rounded via Graphics + Zone for hit area)
+        const demoBtnW = 120;
+        const demoBtnH = 50;
+        const demoBtnX = cx + 95;
+        const demoGfx = this.add.graphics();
+        const drawDemoBtn = (color: number) => {
+            demoGfx.clear();
+            demoGfx.fillStyle(color, 1);
+            demoGfx.fillRoundedRect(demoBtnX - demoBtnW / 2, btnY - demoBtnH / 2, demoBtnW, demoBtnH, 12);
+        };
+        drawDemoBtn(0x1a3a5c);
+        this.add.text(demoBtnX, btnY, '🤖 Démo', {
             fontFamily: 'Arial Black',
             fontSize: '18px',
             color: '#48e8c8',
         }).setOrigin(0.5);
-
-        demoBtn.on('pointerover', () => demoBtn.setFillStyle(0x1e4976));
-        demoBtn.on('pointerout', () => demoBtn.setFillStyle(0x1a3a5c));
-        demoBtn.on('pointerdown', () => this.scene.start('GameScene', { demoMode: true }));
+        const demoZone = this.add.zone(demoBtnX, btnY, demoBtnW, demoBtnH)
+            .setInteractive({ useHandCursor: true });
+        demoZone.on('pointerover', () => drawDemoBtn(0x1e4976));
+        demoZone.on('pointerout', () => drawDemoBtn(0x1a3a5c));
+        demoZone.on('pointerdown', () => this.scene.start('GameScene', { demoMode: true }));
 
         // Controls hint
         this.add.text(cx, btnY + 45, '⌨ Flèches / WASD   📱 Swipe', {

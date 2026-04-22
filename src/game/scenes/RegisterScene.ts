@@ -5,6 +5,7 @@ import { getCurrentPlayer, setCurrentPlayer } from '../logic/Leaderboard';
 export class RegisterScene extends Scene {
     private inputElement: HTMLInputElement | null = null;
     private overlay: HTMLDivElement | null = null;
+    private resizeHandler = () => this.repositionOverlay();
 
     constructor() {
         super('RegisterScene');
@@ -26,7 +27,7 @@ export class RegisterScene extends Scene {
             fontSize: '64px',
             color: '#e0f0ff',
             stroke: '#1a3a5c',
-            strokeThickness: 4,
+            strokeThickness: 6,
         }).setOrigin(0.5);
 
         this.add.text(cx, 220, 'Entrez votre pseudo', {
@@ -35,9 +36,30 @@ export class RegisterScene extends Scene {
             color: '#7eb8e0',
         }).setOrigin(0.5);
 
+        this.add.text(cx, 255, 'Pour sauvegarder vos scores', {
+            fontFamily: 'Arial',
+            fontSize: '15px',
+            color: '#4a7ea8',
+        }).setOrigin(0.5);
+
         this.createDOMInput();
 
         EventBus.emit('current-scene-ready', this);
+    }
+
+    private repositionOverlay() {
+        if (!this.overlay) return;
+        const canvas = this.game.canvas;
+        const parent = canvas.parentElement;
+        if (!parent) return;
+        const rect = canvas.getBoundingClientRect();
+        const parentRect = parent.getBoundingClientRect();
+        Object.assign(this.overlay.style, {
+            top: `${rect.top - parentRect.top}px`,
+            left: `${rect.left - parentRect.left}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+        });
     }
 
     private createDOMInput() {
@@ -45,13 +67,16 @@ export class RegisterScene extends Scene {
         const parent = canvas.parentElement;
         if (!parent) return;
 
+        const rect = canvas.getBoundingClientRect();
+        const parentRect = parent.getBoundingClientRect();
+
         this.overlay = document.createElement('div');
         Object.assign(this.overlay.style, {
             position: 'absolute',
-            top: '0',
-            left: '0',
-            width: `${canvas.width}px`,
-            height: `${canvas.height}px`,
+            top: `${rect.top - parentRect.top}px`,
+            left: `${rect.left - parentRect.left}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -73,10 +98,25 @@ export class RegisterScene extends Scene {
             color: '#e0f0ff',
             outline: 'none',
             marginTop: '40px',
+            boxShadow: '0 0 15px rgba(37, 99, 235, 0.3)',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
         });
         this.inputElement.type = 'text';
         this.inputElement.maxLength = 20;
         this.inputElement.placeholder = 'Votre pseudo...';
+
+        this.inputElement.addEventListener('focus', () => {
+            if (this.inputElement) {
+                this.inputElement.style.borderColor = '#60a5fa';
+                this.inputElement.style.boxShadow = '0 0 20px rgba(96, 165, 250, 0.5)';
+            }
+        });
+        this.inputElement.addEventListener('blur', () => {
+            if (this.inputElement) {
+                this.inputElement.style.borderColor = '#2563eb';
+                this.inputElement.style.boxShadow = '0 0 15px rgba(37, 99, 235, 0.3)';
+            }
+        });
 
         const btn = document.createElement('button');
         Object.assign(btn.style, {
@@ -88,10 +128,20 @@ export class RegisterScene extends Scene {
             backgroundColor: '#2563eb',
             color: '#ffffff',
             border: 'none',
-            borderRadius: '8px',
+            borderRadius: '12px',
             cursor: 'pointer',
+            transition: 'background-color 0.2s, transform 0.1s',
         });
         btn.textContent = 'Commencer';
+
+        btn.onmouseover = () => {
+            btn.style.backgroundColor = '#3b82f6';
+            btn.style.transform = 'scale(1.05)';
+        };
+        btn.onmouseout = () => {
+            btn.style.backgroundColor = '#2563eb';
+            btn.style.transform = 'scale(1)';
+        };
 
         const submit = () => {
             const name = this.inputElement?.value.trim();
@@ -112,10 +162,13 @@ export class RegisterScene extends Scene {
         parent.style.position = 'relative';
         parent.appendChild(this.overlay);
 
+        window.addEventListener('resize', this.resizeHandler);
+
         setTimeout(() => this.inputElement?.focus(), 100);
     }
 
     private cleanupDOM() {
+        window.removeEventListener('resize', this.resizeHandler);
         if (this.overlay && this.overlay.parentElement) {
             this.overlay.parentElement.removeChild(this.overlay);
         }
