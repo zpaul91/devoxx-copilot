@@ -10,6 +10,8 @@ export class Board {
     score: number;
     bestScore: number;
     demoMode: boolean;
+    private _timerStart: number | null = null;
+    private _elapsedMs: number = 0;
 
     constructor(size = 4, demoMode = false) {
         this.size = size;
@@ -26,8 +28,35 @@ export class Board {
     reset(): void {
         this.grid = this.createEmptyGrid();
         this.score = 0;
+        this._elapsedMs = 0;
+        this._timerStart = null;
+        this.startTimer();
         this.spawnTile();
         this.spawnTile();
+    }
+
+    startTimer(): void {
+        if (this._timerStart === null) {
+            this._timerStart = Date.now();
+        }
+    }
+
+    stopTimer(): void {
+        if (this._timerStart !== null) {
+            this._elapsedMs += Date.now() - this._timerStart;
+            this._timerStart = null;
+        }
+    }
+
+    getElapsedMs(): number {
+        if (this._timerStart !== null) {
+            return this._elapsedMs + (Date.now() - this._timerStart);
+        }
+        return this._elapsedMs;
+    }
+
+    getElapsedSeconds(): number {
+        return Math.floor(this.getElapsedMs() / 1000);
     }
 
     spawnTile(bestSpawnFn?: (board: Board) => { row: number; col: number } | null): { row: number; col: number; value: number } | null {

@@ -38,6 +38,8 @@ export class GameScene extends Scene {
     private gridOffsetY!: number;
     private scoreText!: Phaser.GameObjects.Text;
     private bestScoreText!: Phaser.GameObjects.Text;
+    private timerText!: Phaser.GameObjects.Text;
+    private timerEvent?: Phaser.Time.TimerEvent;
     private isAnimating = false;
     private pointerStartX = 0;
     private pointerStartY = 0;
@@ -76,6 +78,13 @@ export class GameScene extends Scene {
         this.createTileContainers();
         this.renderAllTiles(false);
 
+        this.timerEvent = this.time.addEvent({
+            delay: 1000,
+            callback: this.updateTimerDisplay,
+            callbackScope: this,
+            loop: true,
+        });
+
         if (this.demoMode) {
             this.startDemoAutoPlay();
         } else {
@@ -109,13 +118,27 @@ export class GameScene extends Scene {
         }
 
         // Score box
-        const boxW = 120;
+        const boxW = 100;
         const boxH = 50;
-        const scoreBoxX = canvasW / 2 - boxW - 20;
-        const bestBoxX = canvasW / 2 + 20;
+        const timerBoxX = canvasW / 2 - boxW / 2;
+        const scoreBoxX = canvasW / 2 - boxW - boxW / 2 - 10;
+        const bestBoxX = canvasW / 2 + boxW / 2 + 10;
         const boxY = 75;
 
-        this.add.rectangle(scoreBoxX + boxW / 2, boxY + boxH / 2, boxW, boxH, 0x1a3a5c, 1).setOrigin(0.5);
+        // Timer box (center)
+        const timerBoxGfx = this.add.graphics();
+        timerBoxGfx.fillStyle(0x1a3a5c, 1);
+        timerBoxGfx.fillRoundedRect(timerBoxX, boxY, boxW, boxH, 8);
+        this.add.text(timerBoxX + boxW / 2, boxY + 8, 'TEMPS', {
+            fontFamily: 'Arial', fontSize: '12px', color: '#7eb8e0',
+        }).setOrigin(0.5, 0);
+        this.timerText = this.add.text(timerBoxX + boxW / 2, boxY + 30, '00:00', {
+            fontFamily: 'Arial Black', fontSize: '20px', color: '#e0f0ff',
+        }).setOrigin(0.5, 0);
+
+        const scoreBoxGfx = this.add.graphics();
+        scoreBoxGfx.fillStyle(0x1a3a5c, 1);
+        scoreBoxGfx.fillRoundedRect(scoreBoxX, boxY, boxW, boxH, 8);
         this.add.text(scoreBoxX + boxW / 2, boxY + 8, 'SCORE', {
             fontFamily: 'Arial', fontSize: '12px', color: '#7eb8e0',
         }).setOrigin(0.5, 0);
@@ -123,7 +146,9 @@ export class GameScene extends Scene {
             fontFamily: 'Arial Black', fontSize: '20px', color: '#e0f0ff',
         }).setOrigin(0.5, 0);
 
-        this.add.rectangle(bestBoxX + boxW / 2, boxY + boxH / 2, boxW, boxH, 0x1a3a5c, 1).setOrigin(0.5);
+        const bestBoxGfx = this.add.graphics();
+        bestBoxGfx.fillStyle(0x1a3a5c, 1);
+        bestBoxGfx.fillRoundedRect(bestBoxX, boxY, boxW, boxH, 8);
         this.add.text(bestBoxX + boxW / 2, boxY + 8, 'BEST', {
             fontFamily: 'Arial', fontSize: '12px', color: '#7eb8e0',
         }).setOrigin(0.5, 0);
@@ -137,16 +162,29 @@ export class GameScene extends Scene {
         const btnH = 36;
         const btnX = canvasW - 70;
         const btnY = 30;
-        const btn = this.add.rectangle(btnX, btnY, btnW, btnH, 0x2563eb, 1)
-            .setOrigin(0.5)
-            .setInteractive({ useHandCursor: true });
+        const btnGfx = this.add.graphics();
+        btnGfx.fillStyle(0x2563eb, 1);
+        btnGfx.fillRoundedRect(btnX - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+
         this.add.text(btnX, btnY, btnLabel, {
             fontFamily: 'Arial', fontSize: '16px', color: '#ffffff',
         }).setOrigin(0.5);
 
-        btn.on('pointerover', () => btn.setFillStyle(0x3b82f6));
-        btn.on('pointerout', () => btn.setFillStyle(0x2563eb));
-        btn.on('pointerdown', () => {
+        const btnHit = this.add.rectangle(btnX, btnY, btnW, btnH, 0x000000, 0)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true });
+
+        btnHit.on('pointerover', () => {
+            btnGfx.clear();
+            btnGfx.fillStyle(0x3b82f6, 1);
+            btnGfx.fillRoundedRect(btnX - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+        });
+        btnHit.on('pointerout', () => {
+            btnGfx.clear();
+            btnGfx.fillStyle(0x2563eb, 1);
+            btnGfx.fillRoundedRect(btnX - btnW / 2, btnY - btnH / 2, btnW, btnH, 10);
+        });
+        btnHit.on('pointerdown', () => {
             if (this.demoMode) {
                 this.stopDemo();
                 this.scene.start('MainMenu');
@@ -154,6 +192,14 @@ export class GameScene extends Scene {
                 this.restartGame();
             }
         });
+
+        // Subtle horizontal separator below header
+        const sep = this.add.graphics();
+        sep.lineStyle(1, 0x1a3a5c, 1);
+        sep.beginPath();
+        sep.moveTo(this.gridOffsetX, HEADER_HEIGHT + 10);
+        sep.lineTo(this.gridOffsetX + GRID_TOTAL, HEADER_HEIGHT + 10);
+        sep.strokePath();
     }
 
     // --- Demo auto-play ---
@@ -195,6 +241,10 @@ export class GameScene extends Scene {
             this.demoTimer.destroy();
             this.demoTimer = undefined;
         }
+        if (this.timerEvent) {
+            this.timerEvent.destroy();
+            this.timerEvent = undefined;
+        }
         // Also kill any pending delayedCall timers from handleMove/demoStep
         this.time.removeAllEvents();
     }
@@ -210,7 +260,7 @@ export class GameScene extends Scene {
             for (let c = 0; c < GRID_SIZE; c++) {
                 const { x, y } = this.cellPosition(r, c);
                 gfx.fillStyle(CELL_BG, 1);
-                gfx.fillRoundedRect(x, y, CELL_SIZE, CELL_SIZE, 6);
+                gfx.fillRoundedRect(x, y, CELL_SIZE, CELL_SIZE, 8);
             }
         }
     }
@@ -279,9 +329,16 @@ export class GameScene extends Scene {
 
     private createTile(value: number, cx: number, cy: number): Phaser.GameObjects.Container {
         const style = TILE_COLORS[value] || DEFAULT_TILE;
+        const tileW = CELL_SIZE - 4;
+        const tileH = CELL_SIZE - 4;
 
-        const bg = this.add.rectangle(0, 0, CELL_SIZE - 4, CELL_SIZE - 4, style.bg, 1);
-        bg.setStrokeStyle(0);
+        const bg = this.add.graphics();
+        bg.fillStyle(style.bg, 1);
+        bg.fillRoundedRect(-tileW / 2, -tileH / 2, tileW, tileH, 8);
+        // Subtle lighter stroke
+        const strokeColor = Phaser.Display.Color.IntegerToColor(style.bg).brighten(20).color;
+        bg.lineStyle(1, strokeColor, 1);
+        bg.strokeRoundedRect(-tileW / 2, -tileH / 2, tileW, tileH, 8);
 
         const fontSize = value >= 1024 ? '28px' : value >= 128 ? '32px' : '38px';
         const text = this.add.text(0, 0, String(value), {
@@ -379,11 +436,14 @@ export class GameScene extends Scene {
             }
 
             if (!this.demoMode && this.board.isGameOver()) {
+                this.board.stopTimer();
+                const elapsedSeconds = this.board.getElapsedSeconds();
                 this.time.delayedCall(300, () => {
                     this.scene.start('GameOver', {
                         score: this.board.score,
                         bestScore: this.board.bestScore,
                         playerName: getCurrentPlayer() || 'Joueur',
+                        time: elapsedSeconds,
                     });
                 });
             }
@@ -393,6 +453,15 @@ export class GameScene extends Scene {
     private updateScoreDisplay() {
         this.scoreText.setText(String(this.board.score));
         this.bestScoreText.setText(String(this.board.bestScore));
+    }
+
+    private updateTimerDisplay() {
+        const totalSeconds = this.board.getElapsedSeconds();
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        this.timerText.setText(
+            `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+        );
     }
 
     private restartGame() {

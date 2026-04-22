@@ -1,6 +1,7 @@
 export interface LeaderboardEntry {
     name: string;
     score: number;
+    time: number;
     date: string;
 }
 
@@ -26,15 +27,16 @@ function saveEntries(entries: LeaderboardEntry[]): void {
     }
 }
 
-export function addScore(name: string, score: number): number {
+export function addScore(name: string, score: number, time: number = 0): number {
     const entries = loadEntries();
     const entry: LeaderboardEntry = {
         name,
         score,
+        time,
         date: new Date().toISOString(),
     };
     entries.push(entry);
-    entries.sort((a, b) => b.score - a.score);
+    entries.sort((a, b) => b.score - a.score || (a.time ?? 0) - (b.time ?? 0));
     const trimmed = entries.slice(0, MAX_ENTRIES);
     saveEntries(trimmed);
     // Return rank (1-based) of this entry
