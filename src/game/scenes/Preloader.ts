@@ -24,6 +24,6 @@ export class Preloader extends Scene {
     }
 
     create() {
-        this.scene.start('MainMenu');
+        this.scene.start('RegisterScene');
     }
 }

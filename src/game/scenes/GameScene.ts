@@ -1,5 +1,6 @@
 import { Scene } from 'phaser';
 import { Board, MoveResult } from '../logic/Board';
+import { getCurrentPlayer } from '../logic/Leaderboard';
 import { EventBus } from '../EventBus';
 
 // Blue theme tile colors
@@ -284,7 +285,11 @@ export class GameScene extends Scene {
             this.isAnimating = false;
             if (this.board.isGameOver()) {
                 this.time.delayedCall(300, () => {
-                    this.scene.start('GameOver', { score: this.board.score, bestScore: this.board.bestScore });
+                    this.scene.start('GameOver', {
+                        score: this.board.score,
+                        bestScore: this.board.bestScore,
+                        playerName: getCurrentPlayer() || 'Joueur',
+                    });
                 });
             }
         });
