@@ -1,4 +1,4 @@
-import { Scene } from 'phaser';
+import { Scene, Display } from 'phaser';
 import { Board, MoveResult } from '../logic/Board';
 import { getCurrentPlayer } from '../logic/Leaderboard';
 import { bestMove, bestSpawnPosition } from '../logic/DemoAI';
@@ -336,7 +336,7 @@ export class GameScene extends Scene {
         bg.fillStyle(style.bg, 1);
         bg.fillRoundedRect(-tileW / 2, -tileH / 2, tileW, tileH, 8);
         // Subtle lighter stroke
-        const strokeColor = Phaser.Display.Color.IntegerToColor(style.bg).brighten(20).color;
+        const strokeColor = Display.Color.IntegerToColor(style.bg).brighten(20).color;
         bg.lineStyle(1, strokeColor, 1);
         bg.strokeRoundedRect(-tileW / 2, -tileH / 2, tileW, tileH, 8);
 
