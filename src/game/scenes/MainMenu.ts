@@ -108,7 +108,7 @@ export class MainMenu extends Scene {
 
         btn.on('pointerover', () => btn.setFillStyle(0x3b82f6));
         btn.on('pointerout', () => btn.setFillStyle(0x2563eb));
-        btn.on('pointerdown', () => this.scene.start('GameScene'));
+        btn.on('pointerdown', () => this.scene.start('GameScene', { demoMode: false }));
 
         // Demo button
         const demoBtn = this.add.rectangle(cx + 95, btnY, 120, 50, 0x1a3a5c, 1)

@@ -94,7 +94,7 @@ export class GameOver extends Scene {
         }).setOrigin(0.5);
         retryBtn.on('pointerover', () => retryBtn.setFillStyle(0x3b82f6));
         retryBtn.on('pointerout', () => retryBtn.setFillStyle(0x2563eb));
-        retryBtn.on('pointerdown', () => this.scene.start('GameScene'));
+        retryBtn.on('pointerdown', () => this.scene.start('GameScene', { demoMode: false }));
 
         const menuBtn = this.add.rectangle(cx, btnsY + 60, 180, 46, 0x1a3a5c, 1)
             .setInteractive({ useHandCursor: true });

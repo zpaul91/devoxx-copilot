@@ -50,7 +50,9 @@ export class GameScene extends Scene {
     }
 
     init(data?: { demoMode?: boolean }) {
-        this.demoMode = data?.demoMode ?? false;
+        // Phaser retains old settings.data when scene.start() is called without data,
+        // so always use strict check: demoMode must be explicitly true.
+        this.demoMode = data?.demoMode === true;
         this.demoWon = false;
     }
 

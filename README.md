@@ -76,6 +76,66 @@ src/
 | `npm install` | Installer les dépendances |
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Build de production dans `dist/` |
+| `npm run test` | Lancer les tests unitaires |
+| `npm run test:coverage` | Tests + rapport de couverture (seuil : 75%) |
+| `npm run release` | Créer une release (bump auto selon commits) |
+| `npm run release:patch` | Release patch (ex: 1.1.0 → 1.1.1) |
+| `npm run release:minor` | Release minor (ex: 1.1.0 → 1.2.0) |
+| `npm run release:major` | Release major (ex: 1.1.0 → 2.0.0) |
+
+## 🧪 Tests & Coverage
+
+Les tests unitaires utilisent [Vitest](https://vitest.dev) et couvrent la logique de jeu (`src/game/logic/`).
+
+```bash
+npm run test              # lancer les tests
+npm run test:coverage     # tests + rapport de couverture
+```
+
+Le seuil de couverture minimum est de **75%** (lines, branches, functions, statements). Le CI échoue si ce seuil n'est pas atteint.
+
+## 🔄 CI/CD
+
+Le projet utilise GitHub Actions avec deux workflows :
+
+### Pipeline principal (`.github/workflows/deploy.yml`)
+
+Déclenché sur chaque push sur `main` :
+
+1. **CI** — Exécute les tests avec couverture. Échoue si coverage < 75%
+2. **Build** — Build Vite de production (uniquement si CI passe)
+3. **Deploy** — Déploie sur GitHub Pages (uniquement si build passe)
+
+### Release (`.github/workflows/release.yml`)
+
+Déclenché manuellement via `workflow_dispatch` :
+
+- Choisir le type de release : `patch`, `minor` ou `major`
+- Bump automatique de la version dans `package.json`
+- Génération du `CHANGELOG.md`
+- Création d'un tag Git et d'une GitHub Release
+
+## 📝 Conventional Commits
+
+Ce projet suit la convention [Conventional Commits](https://www.conventionalcommits.org/) pour les messages de commit :
+
+| Préfixe | Description | Effet sur la version |
+|---------|-------------|---------------------|
+| `feat:` | Nouvelle fonctionnalité | minor |
+| `fix:` | Correction de bug | patch |
+| `perf:` | Amélioration de performance | patch |
+| `docs:` | Documentation | — |
+| `test:` | Tests | — |
+| `ci:` | CI/CD | — |
+| `refactor:` | Refactoring | — |
+| `chore:` | Maintenance | — |
+
+Exemples :
+```
+feat: ajouter animation de victoire
+fix: corriger le calcul du score lors des fusions
+docs: mettre à jour le README
+```
 
 ## Stack
 
