@@ -21,26 +21,45 @@ describe('Leaderboard', () => {
 
     describe('addScore', () => {
         it('adds a score and returns rank 1 for first entry', () => {
-            const rank = addScore('Alice', 100);
+            const rank = addScore('Alice', 100, 60);
             expect(rank).toBe(1);
         });
 
         it('returns correct rank for multiple entries', () => {
-            addScore('Alice', 300);
-            addScore('Bob', 500);
-            const rank = addScore('Charlie', 400);
+            addScore('Alice', 300, 120);
+            addScore('Bob', 500, 90);
+            const rank = addScore('Charlie', 400, 100);
             // 500, 400, 300 → Charlie is 2nd
             expect(rank).toBe(2);
         });
 
         it('sorts entries by score descending', () => {
-            addScore('Alice', 100);
-            addScore('Bob', 300);
-            addScore('Charlie', 200);
+            addScore('Alice', 100, 60);
+            addScore('Bob', 300, 120);
+            addScore('Charlie', 200, 90);
             const top = getTop(3);
             expect(top[0].score).toBe(300);
             expect(top[1].score).toBe(200);
             expect(top[2].score).toBe(100);
+        });
+
+        it('sorts by time ascending when scores are equal', () => {
+            addScore('Fast', 500, 60);
+            addScore('Slow', 500, 180);
+            addScore('Medium', 500, 120);
+            const top = getTop(3);
+            expect(top[0].name).toBe('Fast');
+            expect(top[0].time).toBe(60);
+            expect(top[1].name).toBe('Medium');
+            expect(top[1].time).toBe(120);
+            expect(top[2].name).toBe('Slow');
+            expect(top[2].time).toBe(180);
+        });
+
+        it('defaults time to 0 when not provided', () => {
+            addScore('Alice', 100);
+            const top = getTop(1);
+            expect(top[0].time).toBe(0);
         });
     });
 
@@ -57,10 +76,11 @@ describe('Leaderboard', () => {
         });
 
         it('entries have correct shape', () => {
-            addScore('Alice', 100);
+            addScore('Alice', 100, 45);
             const top = getTop(1);
             expect(top[0]).toHaveProperty('name', 'Alice');
             expect(top[0]).toHaveProperty('score', 100);
+            expect(top[0]).toHaveProperty('time', 45);
             expect(top[0]).toHaveProperty('date');
         });
     });

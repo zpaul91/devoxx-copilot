@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { Board } from '../Board';
 
 describe('Board', () => {
@@ -299,6 +299,81 @@ describe('Board', () => {
                 [0, 0, 0, 0],
             ];
             expect(board.hasWon()).toBe(true);
+        });
+    });
+
+    describe('timer', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('starts at 0 elapsed time', () => {
+            expect(board.getElapsedMs()).toBe(0);
+            expect(board.getElapsedSeconds()).toBe(0);
+        });
+
+        it('tracks elapsed time after startTimer', () => {
+            board.startTimer();
+            vi.advanceTimersByTime(3000);
+            expect(board.getElapsedMs()).toBe(3000);
+            expect(board.getElapsedSeconds()).toBe(3);
+        });
+
+        it('stops accumulating after stopTimer', () => {
+            board.startTimer();
+            vi.advanceTimersByTime(2000);
+            board.stopTimer();
+            vi.advanceTimersByTime(5000);
+            expect(board.getElapsedMs()).toBe(2000);
+            expect(board.getElapsedSeconds()).toBe(2);
+        });
+
+        it('accumulates across multiple start/stop cycles', () => {
+            board.startTimer();
+            vi.advanceTimersByTime(1000);
+            board.stopTimer();
+
+            board.startTimer();
+            vi.advanceTimersByTime(2000);
+            board.stopTimer();
+
+            expect(board.getElapsedMs()).toBe(3000);
+            expect(board.getElapsedSeconds()).toBe(3);
+        });
+
+        it('reset clears timer and starts it', () => {
+            board.startTimer();
+            vi.advanceTimersByTime(5000);
+            board.reset();
+            // Timer restarted at reset, so elapsed should be ~0
+            expect(board.getElapsedMs()).toBe(0);
+            expect(board.getElapsedSeconds()).toBe(0);
+        });
+
+        it('startTimer is idempotent when already running', () => {
+            board.startTimer();
+            vi.advanceTimersByTime(1000);
+            board.startTimer(); // should not reset
+            vi.advanceTimersByTime(1000);
+            expect(board.getElapsedMs()).toBe(2000);
+        });
+
+        it('stopTimer is idempotent when already stopped', () => {
+            board.startTimer();
+            vi.advanceTimersByTime(1000);
+            board.stopTimer();
+            board.stopTimer(); // should not change anything
+            expect(board.getElapsedMs()).toBe(1000);
+        });
+
+        it('getElapsedSeconds floors the result', () => {
+            board.startTimer();
+            vi.advanceTimersByTime(2999);
+            expect(board.getElapsedSeconds()).toBe(2);
         });
     });
 });
