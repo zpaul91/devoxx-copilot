@@ -9,9 +9,11 @@ export class Board {
     grid: number[][];
     score: number;
     bestScore: number;
+    demoMode: boolean;
 
-    constructor(size = 4) {
+    constructor(size = 4, demoMode = false) {
         this.size = size;
+        this.demoMode = demoMode;
         this.grid = this.createEmptyGrid();
         this.score = 0;
         this.bestScore = this.loadBestScore();
@@ -28,7 +30,14 @@ export class Board {
         this.spawnTile();
     }
 
-    spawnTile(): { row: number; col: number; value: number } | null {
+    spawnTile(bestSpawnFn?: (board: Board) => { row: number; col: number } | null): { row: number; col: number; value: number } | null {
+        if (this.demoMode && bestSpawnFn) {
+            const pos = bestSpawnFn(this);
+            if (!pos) return null;
+            this.grid[pos.row][pos.col] = 2;
+            return { ...pos, value: 2 };
+        }
+
         const empty: { row: number; col: number }[] = [];
         for (let r = 0; r < this.size; r++) {
             for (let c = 0; c < this.size; c++) {

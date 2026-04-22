@@ -1,6 +1,7 @@
 import { Scene } from 'phaser';
 import { Board, MoveResult } from '../logic/Board';
 import { getCurrentPlayer } from '../logic/Leaderboard';
+import { bestMove, bestSpawnPosition } from '../logic/DemoAI';
 import { EventBus } from '../EventBus';
 
 // Blue theme tile colors
@@ -28,6 +29,7 @@ const GRID_PADDING = 12;
 const GRID_TOTAL = GRID_PADDING * 2 + GRID_SIZE * CELL_SIZE + (GRID_SIZE - 1) * CELL_GAP;
 const HEADER_HEIGHT = 120;
 const SWIPE_THRESHOLD = 50;
+const DEMO_MOVE_DELAY = 300;
 
 export class GameScene extends Scene {
     private board!: Board;
@@ -39,13 +41,21 @@ export class GameScene extends Scene {
     private isAnimating = false;
     private pointerStartX = 0;
     private pointerStartY = 0;
+    private demoMode = false;
+    private demoTimer?: Phaser.Time.TimerEvent;
+    private demoWon = false;
 
     constructor() {
         super('GameScene');
     }
 
+    init(data?: { demoMode?: boolean }) {
+        this.demoMode = data?.demoMode ?? false;
+        this.demoWon = false;
+    }
+
     create() {
-        this.board = new Board(GRID_SIZE);
+        this.board = new Board(GRID_SIZE, this.demoMode);
         this.board.reset();
         this.isAnimating = false;
 
@@ -60,7 +70,12 @@ export class GameScene extends Scene {
         this.drawGrid();
         this.createTileContainers();
         this.renderAllTiles(false);
-        this.setupInput();
+
+        if (this.demoMode) {
+            this.startDemoAutoPlay();
+        } else {
+            this.setupInput();
+        }
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -69,11 +84,21 @@ export class GameScene extends Scene {
 
     private drawHeader(canvasW: number) {
         // Title
-        this.add.text(canvasW / 2, 20, '2048', {
+        const titleText = this.demoMode ? '2048 — DÉMO' : '2048';
+        this.add.text(canvasW / 2, 20, titleText, {
             fontFamily: 'Arial Black',
-            fontSize: '48px',
-            color: '#e0f0ff',
+            fontSize: this.demoMode ? '36px' : '48px',
+            color: this.demoMode ? '#00b4d8' : '#e0f0ff',
         }).setOrigin(0.5, 0);
+
+        // Demo badge
+        if (this.demoMode) {
+            this.add.text(canvasW / 2, 60, '🤖 L\'IA joue automatiquement', {
+                fontFamily: 'Arial',
+                fontSize: '13px',
+                color: '#48e8c8',
+            }).setOrigin(0.5, 0);
+        }
 
         // Score box
         const boxW = 120;
@@ -98,7 +123,8 @@ export class GameScene extends Scene {
             fontFamily: 'Arial Black', fontSize: '20px', color: '#e0f0ff',
         }).setOrigin(0.5, 0);
 
-        // Restart button
+        // Stop/Restart button
+        const btnLabel = this.demoMode ? 'Arrêter' : 'Restart';
         const btnW = 100;
         const btnH = 36;
         const btnX = canvasW - 70;
@@ -106,13 +132,61 @@ export class GameScene extends Scene {
         const btn = this.add.rectangle(btnX, btnY, btnW, btnH, 0x2563eb, 1)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true });
-        this.add.text(btnX, btnY, 'Restart', {
+        this.add.text(btnX, btnY, btnLabel, {
             fontFamily: 'Arial', fontSize: '16px', color: '#ffffff',
         }).setOrigin(0.5);
 
         btn.on('pointerover', () => btn.setFillStyle(0x3b82f6));
         btn.on('pointerout', () => btn.setFillStyle(0x2563eb));
-        btn.on('pointerdown', () => this.restartGame());
+        btn.on('pointerdown', () => {
+            if (this.demoMode) {
+                this.stopDemo();
+                this.scene.start('MainMenu');
+            } else {
+                this.restartGame();
+            }
+        });
+    }
+
+    // --- Demo auto-play ---
+
+    private startDemoAutoPlay() {
+        this.demoTimer = this.time.addEvent({
+            delay: DEMO_MOVE_DELAY,
+            callback: this.demoStep,
+            callbackScope: this,
+            loop: true,
+        });
+    }
+
+    private demoStep() {
+        if (this.isAnimating || this.demoWon) return;
+
+        // Check for win
+        if (this.board.hasWon()) {
+            this.demoWon = true;
+            this.stopDemo();
+            this.time.delayedCall(500, () => {
+                this.scene.start('MainMenu');
+            });
+            return;
+        }
+
+        const dir = bestMove(this.board);
+        if (dir) {
+            this.handleMove(dir);
+        } else {
+            // No moves available (shouldn't happen with rigged spawns but just in case)
+            this.stopDemo();
+            this.scene.start('MainMenu');
+        }
+    }
+
+    private stopDemo() {
+        if (this.demoTimer) {
+            this.demoTimer.destroy();
+            this.demoTimer = undefined;
+        }
     }
 
     // --- Grid ---
@@ -277,13 +351,24 @@ export class GameScene extends Scene {
         if (!result.moved) return;
 
         this.isAnimating = true;
-        const spawn = this.board.spawnTile();
+        const spawnFn = this.demoMode ? bestSpawnPosition : undefined;
+        const spawn = this.board.spawnTile(spawnFn);
         this.renderAllTiles(true, result.mergedPositions, spawn ?? undefined);
         this.updateScoreDisplay();
 
         this.time.delayedCall(250, () => {
             this.isAnimating = false;
-            if (this.board.isGameOver()) {
+
+            if (this.demoMode && this.board.hasWon()) {
+                this.demoWon = true;
+                this.stopDemo();
+                this.time.delayedCall(800, () => {
+                    this.scene.start('MainMenu');
+                });
+                return;
+            }
+
+            if (!this.demoMode && this.board.isGameOver()) {
                 this.time.delayedCall(300, () => {
                     this.scene.start('GameOver', {
                         score: this.board.score,
@@ -301,6 +386,10 @@ export class GameScene extends Scene {
     }
 
     private restartGame() {
-        this.scene.restart();
+        this.scene.restart({ demoMode: this.demoMode });
+    }
+
+    shutdown() {
+        this.stopDemo();
     }
 }

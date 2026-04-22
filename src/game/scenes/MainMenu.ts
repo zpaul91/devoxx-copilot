@@ -98,17 +98,30 @@ export class MainMenu extends Scene {
 
         // Play button
         const btnY = subY + 40;
-        const btn = this.add.rectangle(cx, btnY, 180, 50, 0x2563eb, 1)
+        const btn = this.add.rectangle(cx - 55, btnY, 140, 50, 0x2563eb, 1)
             .setInteractive({ useHandCursor: true });
-        this.add.text(cx, btnY, 'Jouer', {
+        this.add.text(cx - 55, btnY, 'Jouer', {
             fontFamily: 'Arial Black',
-            fontSize: '24px',
+            fontSize: '22px',
             color: '#ffffff',
         }).setOrigin(0.5);
 
         btn.on('pointerover', () => btn.setFillStyle(0x3b82f6));
         btn.on('pointerout', () => btn.setFillStyle(0x2563eb));
         btn.on('pointerdown', () => this.scene.start('GameScene'));
+
+        // Demo button
+        const demoBtn = this.add.rectangle(cx + 95, btnY, 120, 50, 0x1a3a5c, 1)
+            .setInteractive({ useHandCursor: true });
+        this.add.text(cx + 95, btnY, '🤖 Démo', {
+            fontFamily: 'Arial Black',
+            fontSize: '18px',
+            color: '#48e8c8',
+        }).setOrigin(0.5);
+
+        demoBtn.on('pointerover', () => demoBtn.setFillStyle(0x1e4976));
+        demoBtn.on('pointerout', () => demoBtn.setFillStyle(0x1a3a5c));
+        demoBtn.on('pointerdown', () => this.scene.start('GameScene', { demoMode: true }));
 
         // Controls hint
         this.add.text(cx, btnY + 45, '⌨ Flèches / WASD   📱 Swipe', {
